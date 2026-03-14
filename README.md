@@ -1,2 +1,3 @@
 # docs
-Documentation and Notes stuff
+
+Documentation and Notes for my, and your, reference
