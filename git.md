@@ -156,11 +156,17 @@ Switched to a new branch 'new'
 ```
 
 The sequence of commits across all branches forms a Directed Acyclic Graph (DAG).
+The latest commit for each branch is stored in `.git/refs/heads`
+
+```bash
+❯ cat .git/refs/heads/main
+033c4d7bb870704a64c326fbc626d87fb7ade899
+```
 
 #### Tags
 
 Tags are string identifiers for a commit.
-A tag is a file in `.git/refs/tags` which contains only the commit sha it points to.
+A tag is a file in `.git/refs/tags` which contains only the object sha it points to.
 
 ```bash
 ❯ cat .git/refs/tags/v1.0.0
@@ -174,6 +180,19 @@ Release version 1.0.0
 ...
 -----END SIGNED MESSAGE-----
 6f9f51d (HEAD -> main, tag: v1.0.0, origin/main, origin/HEAD) how git works init
+```
+
+#### HEAD
+
+Head is a special tag located at `.git/HEAD` indicating which branch is currently checked out.
+
+```bash
+❯ cat .git/HEAD
+ref: refs/heads/main
+
+docs on  main [!?] on ☁️
+❯ cat .git/refs/heads/main
+033c4d7bb870704a64c326fbc626d87fb7ade899
 ```
 
 #### Patch
@@ -220,7 +239,7 @@ Packfiles can be manually created by running the garbage collector `git gc`.
 
 #### Merging
 
-When we do a branch merge, we create a new commit with two parent trees.
+When we do a branch merge, we create a new commit with two parent commits.
 
 ```mermaid
 gitGraph
@@ -272,7 +291,7 @@ gitGraph
    commit id: "971a2d0"
    branch develop
    checkout develop
-   commit id: "6f9f51d4"
+   commit id: "6f9f51d"
    checkout main
    commit id: "587fd4f"
 ```
@@ -288,7 +307,7 @@ gitGraph
 #### Remote
 
 A remote is a host which git objects can be pushed to or pulled from.
-A `fetch` operation copies all commit objects as well as their associated trees and blobs from the remote to the local host.
+A `fetch` operation copies new commit objects as well as their associated trees and blobs from the remote to the local host.
 A `push` operation pushes a commit object as well as its associated tree and blobs to the host.
 A `pull` operation does first a fetch and then a merge.
 For efficiency, data is transferred as a packfile.
@@ -300,7 +319,7 @@ Either this will set the tree state of the repo to the requesting repos, or will
 
 #### Conflicts
 
-Conflicts are handled via the [three-way merge algorithm](<https://en.wikipedia.org/wiki/Merge_(version_control)#Merge_algorithms>)
+Conflicts are handled via the [three-way merge algorithm](<https://en.wikipedia.org/wiki/Merge_(version_control)#Merge_algorithms>).
 When determining conflicts between two commits, git uses the most recent common ancestor.
 Each change is diff'd with the most recent ancestor.
 Diffs are then intersected to find overlapping changes.
@@ -320,4 +339,4 @@ In the example above:
 
 1. The repository state (commit) in `6f9f51d` and `e19e507` are diff'd against `971a2d0`.
 2. The two diff's are intersected to find overlapping changes.
-3. The user is prompted to resolve the conflicts, while all other changes are unaffected.
+3. The user must resolve the conflicts, while all other changes are unaffected.
