@@ -1,6 +1,6 @@
 ### How Git Works
 
-TODO: rebase, pull requests, remotes, tags
+TODO: remotes, merge conflicts
 
 #### TL;DR
 
@@ -9,12 +9,12 @@ TODO: rebase, pull requests, remotes, tags
 Git objects are stored in the `.git/objects` directory, sorted by their first two SHA characters.
 Git stores four types of objects.
 
-| Object | Stores             |
-| ------ | ------------------ |
-| Blob   | Contents of a file |
-| Tree   | Folder structure   |
-| Commit | Tree at this point |
-| Tag    |                    |
+| Object | Stores                |
+| ------ | --------------------- |
+| Blob   | Contents of a file    |
+| Tree   | Folder structure      |
+| Commit | Tree at this point    |
+| Tag    | String commit pointer |
 
 #### Blobs
 
@@ -95,9 +95,9 @@ When we make a commit, we are adding a new tree to the end of the sequence.
 
 ```mermaid
     gitGraph
-       commit id: "Commit 1"
-       commit id: "Commit 2"
-       commit id: "Commit 3"
+       commit id: "22fe2d6"
+       commit id: "971a2d0"
+       commit id: "e19e507"
 ```
 
 #### Branches
@@ -128,7 +128,7 @@ committer crosleyzack <mail@crosleyzack.com> 1792461316 -0400
 
 Multiple branches can point at the same commit
 
-```
+```bash
 ❯ cat .git/refs/heads/test
 585bda283b16aa35bf3f26ad6f0d32663c8daf75
 
@@ -139,7 +139,39 @@ Switched to a new branch 'new'
 585bda283b16aa35bf3f26ad6f0d32663c8daf75
 ```
 
+```mermaid
+    gitGraph
+        commit id: "22fe2d6"
+        commit id: "971a2d0"
+        commit id: "e19e507"
+        branch branch1
+        branch branch2
+        checkout branch1
+        commit id:"e19e507"
+        checkout branch2
+        commit id:"e19e507"
+```
+
 The sequence of commits across all branches forms a Directed Acyclic Graph (DAG).
+
+##### Tags
+
+Tags are string identifiers for a commit.
+A tag is a file in `.git/refs/tags` which contains only the commit sha it points to.
+
+```bash
+❯ cat .git/refs/tags/v1.0.0
+62821c676fc3c53b31a470e0461e686359410d15
+
+❯ git show 62821c676fc3c53b31a470e0461e686359410d15 --oneline --no-patch
+tag v1.0.0
+
+Release version 1.0.0
+-----BEGIN SIGNED MESSAGE-----
+...
+-----END SIGNED MESSAGE-----
+6f9f51d (HEAD -> main, tag: v1.0.0, origin/main, origin/HEAD) how git works init
+```
 
 #### Patch
 
@@ -215,3 +247,33 @@ author crosleyzack <mail@crosleyzack.com> 1792462741 -0400
 committer crosleyzack <mail@crosleyzack.com> 1792462741 -0400
 ...
 ```
+
+#### Rebase
+
+When we do a branch rebase, we put all commits from the branch after the last commit.
+This maintains linear history, and is often preferred
+
+```mermaid
+gitGraph
+   commit id: "22fe2d6"
+   commit id: "971a2d0"
+   branch develop
+   checkout develop
+   commit id: "6f9f51d4"
+   checkou main
+   commit id: "587fd4f"
+```
+
+````mermaid
+gitGraph
+   commit id: "22fe2d6"
+   commit id: "971a2d0"
+   commit id: "6f9f51d4"
+   commit id: "587fd4f"
+```mermaid
+````
+
+#### Pull Requests
+
+A pull request is a request for a repository to pull your tree state and apply it to the repository.
+Either this will set the tree state of the repo to the requesting repos, or will combine the states via a merge or rebase
