@@ -141,15 +141,15 @@ Switched to a new branch 'new'
 
 ```mermaid
     gitGraph
-        commit id: "22fe2d6"
-        commit id: "971a2d0"
-        commit id: "e19e507"
+        commit
+        commit
+        commit tag: "e19e507"
         branch branch1
         branch branch2
         checkout branch1
-        commit id:"e19e507"
+        commit tag:"e19e507"
         checkout branch2
-        commit id:"e19e507"
+        commit tag:"e19e507"
 ```
 
 The sequence of commits across all branches forms a Directed Acyclic Graph (DAG).
@@ -218,8 +218,8 @@ gitGraph
    commit
    commit
    checkout main
-   merge develop id: "4-888db77"
    commit
+   merge develop id: "888db77"
    commit
 ```
 
@@ -260,18 +260,17 @@ gitGraph
    branch develop
    checkout develop
    commit id: "6f9f51d4"
-   checkou main
+   checkout main
    commit id: "587fd4f"
 ```
 
-````mermaid
+```mermaid
 gitGraph
    commit id: "22fe2d6"
    commit id: "971a2d0"
    commit id: "6f9f51d4"
    commit id: "587fd4f"
-```mermaid
-````
+```
 
 #### Pull Requests
 
