@@ -1,28 +1,38 @@
 ### How Git Works
 
-// TODO: git-at-scale
-
 #### TL;DR
 
 Git is a directed acyclic graph of directory trees which can be selected, combined, and altered to create new trees.
 
-#### Git Object Types
+A lot of git can be understood through the file structure of a repositories .git folder:
+
+```
+ .git
+  ├── hooks
+  ├── info
+  ├── objects
+  └── refs
+      ├── heads
+      ├── remotes
+      └── tags
+```
+
+#### Objects
 
 Git objects are stored in the `.git/objects` directory, sorted by their first two SHA characters.
 Git objects are identified by their SHA-1 hash.
-Git stores four types of objects.
+Git stores three types of objects.
 
-| Object | Stores                |
-| ------ | --------------------- |
-| Blob   | Contents of a file    |
-| Tree   | Folder structure      |
-| Commit | Tree at this point    |
-| Tag    | String object pointer |
+| Object | Stores             |
+| ------ | ------------------ |
+| Blob   | Contents of a file |
+| Tree   | Folder structure   |
+| Commit | Tree at this point |
 
-#### Blobs
+##### Blobs
 
 Blobs store the contents of a file, separate from the name or folder structure.
-Each iteration of a file is stored completely, compressed for disk efficiency.
+Each iteration of a file is stored completely (asterisk this for later), compressed for disk efficiency.
 We can thus view all iterations of a file, such as a README.md.
 
 ```bash
@@ -41,7 +51,7 @@ Documentation and Notes stuff
 
 Nothing in the blob identifies this as `README.md`, this is only pure byte content.
 
-#### Trees
+##### Trees
 
 Trees represent the folder structure of the directory.
 Trees contain blobs or other trees.
@@ -65,7 +75,7 @@ As well as the trees under the root tree.
 040000 tree 61afa69e3486ccc1cc102a8e1621a8121e6e480d	workflows
 ```
 
-#### Commit
+##### Commit
 
 A commit points to a specific tree, indicating an iteration of the file structure.
 We can list all commit objects from the object storage.
@@ -78,7 +88,9 @@ commit 971a2d02c515e460e3a109b00be83bd6646b28a5
 commit 22fe2d642f1d17738f1b13eeae9c89b5f8a83b4e
 ```
 
-Each commit contains a message, an author, the tree it points to, and its parent commit.
+Each commit contains a message, an author, the tree it points to, and its parent commit(s).
+
+Note: the first commit of a new repository will have no parent commit.
 
 ```
 ❯ git cat-file -p 587fd4fdef1df8b8d980ce57537df72b1a6a7d55
@@ -93,7 +105,7 @@ gpgsig -----BEGIN SIGNED MESSAGE-----
 add espresso guide
 ```
 
-When we look at `git log`, we are seeing all commits, and thus the file trees over time.
+When we look at `git log`, we are seeing all commits walking back from the current commit, and thus the file trees over time.
 When we make a commit, we are adding a new tree to the end of the sequence.
 
 ```mermaid
@@ -103,7 +115,7 @@ When we make a commit, we are adding a new tree to the end of the sequence.
        commit id: "e19e507"
 ```
 
-#### Branches
+##### Branches
 
 Branches are named pointers to a commit.
 Branch definitions live under `.git/refs/heads/`
@@ -163,9 +175,20 @@ The latest commit for each branch is stored in `.git/refs/heads`
 033c4d7bb870704a64c326fbc626d87fb7ade899
 ```
 
-#### Tags
+#### References
 
-Tags are string identifiers for a commit.
+Git references are pointers to git objects.
+
+| Reference       | Points to                          |
+| --------------- | ---------------------------------- |
+| Tag             | A git object                       |
+| .git/HEAD       | The active git commit              |
+| .git/refs/heads | The active git commit for a branch |
+| Remote          | Active git commit for each remote  |
+
+##### Tags
+
+Tags are string identifiers for a git object.
 A tag is a file in `.git/refs/tags` which contains only the object sha it points to.
 
 ```bash
@@ -182,9 +205,9 @@ Release version 1.0.0
 6f9f51d (HEAD -> main, tag: v1.0.0, origin/main, origin/HEAD) how git works init
 ```
 
-#### HEAD
+##### HEAD
 
-Head is a special tag located at `.git/HEAD` indicating which branch is currently checked out.
+Head is a pointer located at `.git/HEAD` indicating which branch is currently checked out.
 
 ```bash
 ❯ cat .git/HEAD
@@ -195,7 +218,19 @@ docs on  main [!?] on ☁️
 033c4d7bb870704a64c326fbc626d87fb7ade899
 ```
 
-#### Patch
+##### Remote
+
+A remote is a host which git objects can be pushed to or pulled from.
+Remote hosts are configured in `.git/config`.
+For each remote the current commit at last fetch for that remote is tracked in `.git/refs/remotes`.
+A `fetch` operation copies new commit objects as well as their associated trees and blobs from the remote to the local host.
+A `push` operation pushes a commit object as well as its associated tree and blobs to the host.
+A `pull` operation does first a fetch and then a merge or rebase (usually a merge).
+For efficiency, data is transferred as a packfile.
+
+#### Version Control
+
+##### Patch
 
 A patch file defines changes to be applied to a set of blobs (files).
 A patch defines removals and additions by line.
@@ -229,7 +264,7 @@ index 0000000..3b18e51
 Patches are generated by diff-ing two different commits and storing the changes.
 File changes can be described and shared via patch files.
 
-#### Packfiles
+##### Packfiles
 
 git will periodically combine loose `.git/objects` entries into compressed files called packfiles.
 Packfiles are stored in `.git/objects/pack`
@@ -237,7 +272,7 @@ Packfiles are indexed, compressed datastores for git objects that reduce disk sp
 Requests for a specific git object will check the packfile first, before checking loose git objects.
 Packfiles can be manually created by running the garbage collector `git gc`.
 
-#### Merging
+##### Merging
 
 When we do a branch merge, we create a new commit with two parent commits.
 
@@ -280,7 +315,7 @@ committer crosleyzack <mail@crosleyzack.com> 1792462741 -0400
 ...
 ```
 
-#### Rebase
+##### Rebase
 
 When we do a branch rebase, we put all commits from the branch after the last commit.
 This maintains linear history, and is often preferred.
@@ -304,20 +339,14 @@ gitGraph
    commit id: "6f9f51d"
 ```
 
-#### Remote
+NOTE: in reality, the commit sha `6f9f51d` will change on rebase, as the `parent` field will change and thus the content and hash of the content will change.
 
-A remote is a host which git objects can be pushed to or pulled from.
-A `fetch` operation copies new commit objects as well as their associated trees and blobs from the remote to the local host.
-A `push` operation pushes a commit object as well as its associated tree and blobs to the host.
-A `pull` operation does first a fetch and then a merge.
-For efficiency, data is transferred as a packfile.
-
-#### Pull Requests
+##### Pull Requests
 
 A pull request is a request for a remote repository to pull your tree state and apply it to the repository.
 Either this will set the tree state of the repo to the requesting repos, or will combine the states via a merge or rebase
 
-#### Conflicts
+##### Conflicts
 
 Conflicts are handled via the [three-way merge algorithm](<https://en.wikipedia.org/wiki/Merge_(version_control)#Merge_algorithms>).
 When determining conflicts between two commits, git uses the most recent common ancestor.
@@ -340,3 +369,18 @@ In the example above:
 1. The repository state (commit) in `6f9f51d` and `e19e507` are diff'd against `971a2d0`.
 2. The two diff's are intersected to find overlapping changes.
 3. The user must resolve the conflicts, while all other changes are unaffected.
+
+#### Hosting Git
+
+As described in cursor's [git at any scale](https://cursor.com/blog/git-at-any-scale), hosting git is _hard_.
+This is because each repository may have thousands of users pushing and pulling code at any given time.
+For a push, copies of every new or changed file are pushed as new git objects.
+For fetches, new git objects for the caller must be determined, combined into a packfile, and returned.
+To avoid synchronization errors, locks often are used causing thousands of write commands to be done in a linear fashion.
+Furthermore, git repositories are defined by the `.git` directory, which means each git repo must have a file system for storage (for github, local NVMe disks).
+Creating multiple repository replicas for efficiency and resiliency thus requires constant synchronization, resulting in the current [spoke](https://github.blog/engineering/infrastructure/stretching-spokes/) model.
+[Other work](https://github.blog/engineering/architecture-optimization/the-bridge-to-agent-scale-git-infrastructure/) to improve this includes adding read-only replicas for fetch commands and locking at the reference rather than repository level.
+
+#### Asterisks
+
+1. Only loose objects are actually stored in full. Most are stored as pack files in `.git/objects/pack` for efficiency. Loose objects are regularly cleaned up via garbage collection.
